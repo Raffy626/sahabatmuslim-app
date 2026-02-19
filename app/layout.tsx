@@ -37,8 +37,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased pb-20`}
       >
-        <BottomNavbar />
-        {children}
+        <div className="app-container">
+          <BottomNavbar />
+          {children}
+        </div>
       </body>
     </html>
   );
