@@ -1,7 +1,12 @@
 "use client";
 
+import { sanitizeArabic } from "@/src/utils/quran";
+import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
-import { Bell, Settings, Calendar as CalendarIcon, MapPin, ChevronRight, Play, Share2, Bookmark, CheckCircle2, Sunset, Clock } from "lucide-react";
+import { Settings, Calendar as CalendarIcon, MapPin, ChevronRight, Play, Share2, Bookmark,  CheckCircle2,
+  Sunset,
+  Clock,
+} from "lucide-react";
 import { Coordinates, CalculationMethod, PrayerTimes } from "adhan";
 import { DateTime } from "luxon";
 
@@ -9,12 +14,21 @@ export default function Home() {
   const [locationName, setLocationName] = useState("Jakarta, ID");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [currentTime, setCurrentTime] = useState(DateTime.now());
+  const [userName, setUserName] = useState("Sahabat Muslim");
+  const [calcMethodId, setCalcMethodId] = useState("MoonsightingCommittee");
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(DateTime.now());
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const savedName = localStorage.getItem("userName");
+    const savedMethod = localStorage.getItem("calculationMethod");
+    if (savedName) setUserName(savedName);
+    if (savedMethod) setCalcMethodId(savedMethod);
   }, []);
 
   useEffect(() => {
@@ -43,10 +57,18 @@ export default function Home() {
     const defaultCoords = new Coordinates(-6.2088, 106.8456); // Jakarta
     const userCoords = coords ? new Coordinates(coords.latitude, coords.longitude) : defaultCoords;
     const date = new Date();
-    const params = CalculationMethod.MoonsightingCommittee();
-    const prayerTimes = new PrayerTimes(userCoords, date, params);
+
+    let params;
+    switch(calcMethodId) {
+      case "MuslimWorldLeague": params = CalculationMethod.MuslimWorldLeague(); break;
+      case "Egyptian": params = CalculationMethod.Egyptian(); break;
+      case "Karachi": params = CalculationMethod.Karachi(); break;
+      case "Singapore": params = CalculationMethod.Singapore(); break;
+      default: params = CalculationMethod.MoonsightingCommittee();
+    }
     
-    // For yesterday and tomorrow's times (to handle day-wraps)
+    const prayerTimes = new PrayerTimes(userCoords, date, params);
+
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const prayerTimesYesterday = new PrayerTimes(userCoords, yesterday, params);
@@ -70,14 +92,11 @@ export default function Home() {
     const nextPrayerName = nextPrayer !== "none" ? nextPrayer.charAt(0).toUpperCase() + nextPrayer.slice(1) : "Fajr";
     const nextPrayerTime = nextPrayer !== "none" ? prayerTimes.timeForPrayer(nextPrayer) : prayerTimesTomorrow.fajr;
     
-    // Logic for progress calculation
     let start, end;
     if (currentPrayer === "none") {
-      // Before Fajr
       start = prayerTimesYesterday.isha;
       end = prayerTimes.fajr;
     } else if (nextPrayer === "none") {
-      // After Isha
       start = prayerTimes.isha;
       end = prayerTimesTomorrow.fajr;
     } else {
@@ -91,7 +110,6 @@ export default function Home() {
     const elapsedDuration = currentTime.diff(startTime).as("milliseconds");
     const progress = Math.min(Math.max((elapsedDuration / totalDuration) * 100, 0), 100);
 
-    // Calculate countdown
     const nextDateTime = DateTime.fromJSDate(nextPrayerTime as Date);
     const diff = nextDateTime.diff(currentTime, ["hours", "minutes", "seconds"]);
     const countdown = diff.toFormat("hh'h' mm'm' ss's'");
@@ -111,7 +129,7 @@ export default function Home() {
         progress: progress
       }
     };
-  }, [coords, currentTime]);
+  }, [coords, currentTime, calcMethodId]);
 
   return (
     <main className="min-h-screen bg-[#f8fafc] px-4 pt-6 pb-24 max-w-lg mx-auto">
@@ -122,16 +140,16 @@ export default function Home() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Assalamu Alaikum</p>
-            <h1 className="text-xl font-bold text-slate-800">Ahmed</h1>
+            <h1 className="text-xl font-bold text-slate-800">{userName}</h1>
           </div>
         </div>
         <div className="flex gap-2">
-          <button className="p-2.5 rounded-full bg-white shadow-sm border border-slate-100 text-slate-500 hover:bg-slate-50 transition-colors">
-            <Bell size={20} />
-          </button>
-          <button className="p-2.5 rounded-full bg-white shadow-sm border border-slate-100 text-slate-500 hover:bg-slate-50 transition-colors">
+          <Link 
+            href="/settings"
+            className="p-2.5 rounded-full bg-white shadow-sm border border-slate-100 text-slate-500 hover:bg-slate-50 transition-colors"
+          >
             <Settings size={20} />
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -175,7 +193,6 @@ export default function Home() {
 
             <div className="flex justify-center mb-6">
               <div className="w-32 h-32 relative flex items-center justify-center">
-                {/* Background Circle */}
                 <svg className="w-full h-full -rotate-90">
                   <circle
                     cx="64"
@@ -185,7 +202,6 @@ export default function Home() {
                     stroke="#f1f5f9"
                     strokeWidth="8"
                   />
-                  {/* Progress Circle */}
                   <circle
                     cx="64"
                     cy="64"
@@ -205,9 +221,11 @@ export default function Home() {
               </div>
             </div>
 
-            <button className="w-full bg-emerald-50 py-4 rounded-2xl text-emerald-700 text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors">
-              View Full Schedule <ChevronRight size={16} />
-            </button>
+            <Link href="/prayer-times" className="block w-full">
+              <button className="w-full bg-emerald-50 py-4 rounded-2xl text-emerald-700 text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors cursor-pointer">
+                View Full Schedule <ChevronRight size={16} />
+              </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -216,17 +234,17 @@ export default function Home() {
         <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-4">Quick Access</h4>
         <div className="grid grid-cols-4 gap-4">
           {[
-            { name: "Quran", icon: "📖", color: "bg-blue-50 text-blue-600 border-blue-100" },
-            { name: "Qibla", icon: "🧭", color: "bg-emerald-50 text-emerald-600 border-emerald-100" },
-            { name: "Duas", icon: "🤲", color: "bg-rose-50 text-rose-600 border-rose-100" },
-            { name: "Zakat", icon: "💵", color: "bg-slate-50 text-slate-600 border-slate-100" },
+            { name: "Quran", icon: "📖", color: "bg-blue-50 text-blue-600 border-blue-100", href: "/quran" },
+            { name: "Qibla", icon: "🧭", color: "bg-emerald-50 text-emerald-600 border-emerald-100", href: "/qibla" },
+            { name: "Duas", icon: "🤲", color: "bg-rose-50 text-rose-600 border-rose-100", href: "/doa" },
+            { name: "Calendar", icon: "📅", color: "bg-amber-50 text-amber-600 border-amber-100", href: "/calendar" },
           ].map((item) => (
-            <div key={item.name} className="flex flex-col items-center gap-2">
+            <Link key={item.name} href={item.href || "#"} className="flex flex-col items-center gap-2">
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border shadow-sm ${item.color} hover:scale-105 transition-transform cursor-pointer`}>
                 {item.icon}
               </div>
               <span className="text-[10px] font-bold text-slate-500">{item.name}</span>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
@@ -234,7 +252,9 @@ export default function Home() {
       <section className="mb-8 overflow-hidden">
         <div className="flex justify-between items-end mb-4 pr-1">
           <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Todays Prayers</h4>
-          <button className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">See All</button>
+          <Link href="/prayer-times">
+            <button className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest cursor-pointer">See All</button>
+          </Link>
         </div>
         
         <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
@@ -274,12 +294,12 @@ export default function Home() {
             </div>
           </div>
           
-          <p className="text-2xl text-right font-serif leading-relaxed text-slate-800 mb-6 dir-rtl tracking-wide">
-            يَا أَيُّهَا الَّذِينَ آمَنُوا كُتِبَ عَلَيْكُمُ الصِّيَامُ
+          <p className="text-2xl text-right font-arabic leading-relaxed text-slate-800 mb-6 tracking-wide" dir="rtl">
+            {sanitizeArabic("يٰٓاَيُّهَا الَّذِيْنَ اٰمَنُوْا كُتِبَ عَلَيْكُمُ الصِّيَامُ كَمَا كُتِبَ عَلَى الَّذِيْنَ مِنْ قَبْلِكُمْ لَعَلَّكُمْ تَتَّقُوْنَۙ")}
           </p>
           
           <p className="text-xs text-slate-500 leading-relaxed mb-6 font-medium italic">
-            O you who have believed, decreed upon you is fasting as it was decreed upon those before you that you may become righteous.
+            Wahai orang-orang yang beriman! Diwajibkan atas kamu berpuasa sebagaimana diwajibkan atas orang sebelum kamu agar kamu bertakwa
           </p>
         </div>
       </section>

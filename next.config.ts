@@ -3,6 +3,9 @@ import withPWAInit from "next-pwa";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  experimental: {
+    // turbopack: {}, // If needed to bypass the webpack detection
+  }
 };
 
 export default process.env.NODE_ENV === "development"

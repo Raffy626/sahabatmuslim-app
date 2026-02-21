@@ -2,18 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, BookOpen, Users } from "lucide-react";
+import { Home, Calendar, BookOpen, Sparkles } from "lucide-react";
 
 export default function BottomNavbar() {
   const pathname = usePathname();
 
   const menus = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Calendar", href: "/calendar", icon: Calendar },
-    { name: "Center", href: "/pray", isCenter: true },
-    { name: "Quran", href: "/quran", icon: BookOpen },
-    { name: "Community", href: "/community", icon: Users },
+    { name: "Beranda", href: "/", icon: Home },
+    { name: "Kalender", href: "/calendar", icon: Calendar },
+    { name: "Center", href: "/prayer-times", isCenter: true },
+    { name: "Al-Qur'an", href: "/quran", icon: BookOpen },
+    { name: "Doa", href: "/doa", icon: Sparkles },
   ];
+
+  const handleMosqueFinder = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          window.open(`https://www.google.com/maps/search/Masjid+Terdekat/@${latitude},${longitude},15z`, "_blank");
+        },
+        () => {
+          window.open(`https://www.google.com/maps/search/Masjid+Terdekat`, "_blank");
+        }
+      );
+    } else {
+      window.open(`https://www.google.com/maps/search/Masjid+Terdekat`, "_blank");
+    }
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50">
@@ -22,9 +38,9 @@ export default function BottomNavbar() {
           if (menu.isCenter) {
             return (
               <div key={menu.name} className="relative w-14 h-14 -top-6">
-                <Link
-                  href={menu.href}
-                  className="absolute left-1/2 -translate-x-1/2 bg-[#10b981] p-3 rounded-full border-[6px] border-white shadow-[0_8px_15px_rgba(16,185,129,0.3)] hover:scale-105 transition-transform duration-200"
+                <button
+                  onClick={handleMosqueFinder}
+                  className="absolute left-1/2 -translate-x-1/2 bg-[#10b981] p-3 rounded-full border-[6px] border-white shadow-[0_8px_15px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
                 >
                   <svg
                     width="28"
@@ -44,7 +60,7 @@ export default function BottomNavbar() {
                     <path d="M10 20v-3a2 2 0 0 1 4 0v3" />
                     <path d="M12 9v-2" />
                   </svg>
-                </Link>
+                </button>
               </div>
             );
           }
