@@ -1,10 +1,9 @@
-import type { NextConfig } from "next";
 import withPWAInit from "next-pwa";
 
-const nextConfig: NextConfig = {
-  /* config options here */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const nextConfig: any = {
   experimental: {
-    // turbopack: {}, // If needed to bypass the webpack detection
+    turbopack: {},
   }
 };
 
