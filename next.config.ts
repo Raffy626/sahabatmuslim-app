@@ -2,9 +2,7 @@ import withPWAInit from "next-pwa";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nextConfig: any = {
-  experimental: {
-    turbopack: {},
-  }
+  turbopack: {},
 };
 
 export default process.env.NODE_ENV === "development"
